@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { players } from "../data/playerData";
 import { teamData, getAllTeamPlayers } from "../data/teamData";
 import { Player, GameState, GameMessage } from "../types/game";
@@ -27,6 +27,9 @@ export function useGameLoop() {
           money: 100000,
         };
   });
+
+  const previousGameStateRef = useRef<GameState | null>(null);
+  const lastUpdateTimeRef = useRef<number>(Date.now());
 
   const handleTransferPlayer = (newState: GameState, payload: Player) => {
     if (payload && payload.id != null) {
@@ -159,51 +162,78 @@ export function useGameLoop() {
           break;
       }
 
-      console.log("New game state:", newState);
-      return newState;
+      if (JSON.stringify(newState) !== JSON.stringify(prevState)) {
+        console.log("New game state:", newState);
+        return newState;
+      }
+      return prevState;
     });
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setGameState((prevState) => {
-        const newTick = prevState.tick + 1;
-        const updatedPlayers = prevState.players.map((player) => {
-          if (player.training && player.training.ticksRemaining > 0) {
-            const newTicksRemaining = player.training.ticksRemaining - 1;
-            if (newTicksRemaining === 0) {
-              // Training completed
-              return {
-                ...player,
-                skills: {
-                  ...player.skills,
-                  [player.training.stat]:
-                    player.skills[player.training.stat] + 1,
-                },
-                training: null,
-              };
-            } else {
-              // Continue training
-              return {
-                ...player,
-                training: {
-                  ...player.training,
-                  ticksRemaining: newTicksRemaining,
-                },
-              };
-            }
-          }
-          return player;
-        });
-        return { ...prevState, players: updatedPlayers, tick: newTick };
-      });
-    }, 1000);
+    const gameLoop = () => {
+      const now = Date.now();
+      const deltaTime = now - lastUpdateTimeRef.current;
 
-    return () => clearInterval(timer);
+      if (deltaTime >= 1000) {
+        setGameState((prevState) => {
+          const newTick = prevState.tick + 1;
+          const updatedPlayers = prevState.players.map((player) => {
+            if (player.training && player.training.ticksRemaining > 0) {
+              const newTicksRemaining = player.training.ticksRemaining - 1;
+              if (newTicksRemaining === 0) {
+                // Training completed
+                return {
+                  ...player,
+                  skills: {
+                    ...player.skills,
+                    [player.training.stat]:
+                      player.skills[player.training.stat] + 1,
+                  },
+                  training: null,
+                };
+              } else {
+                // Continue training
+                return {
+                  ...player,
+                  training: {
+                    ...player.training,
+                    ticksRemaining: newTicksRemaining,
+                  },
+                };
+              }
+            }
+            return player;
+          });
+
+          const newState = {
+            ...prevState,
+            players: updatedPlayers,
+            tick: newTick,
+          };
+
+          if (JSON.stringify(newState) !== JSON.stringify(prevState)) {
+            return newState;
+          }
+          return prevState;
+        });
+
+        lastUpdateTimeRef.current = now;
+      }
+
+      requestAnimationFrame(gameLoop);
+    };
+
+    const ref = requestAnimationFrame(gameLoop);
+
+    return () => cancelAnimationFrame(ref);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("gameState", JSON.stringify(gameState));
+    if (previousGameStateRef.current !== gameState) {
+      localStorage.setItem("gameState", JSON.stringify(gameState));
+      previousGameStateRef.current = gameState;
+    }
   }, [gameState]);
 
   const getRandomPlayers = useCallback(

@@ -8,15 +8,11 @@ import { TrainingComponent } from "./TrainingComponent";
 import { MatchesComponent } from "./MatchesComponent";
 import { TransferComponent } from "./TransferComponent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DragDropContext, DropResult } from "react-beautiful-dnd";
+import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 
 export function GameComponent() {
   const { gameState, addMessage } = useGameLoop();
   const { currentTeam, money, players, availablePlayers, teams } = gameState;
-
-  const handleAddPlayer = (player: Player) => {
-    addMessage({ type: "ADD_PLAYER", payload: player });
-  };
 
   const handleTransferPlayer = (player: Player) => {
     if (money >= player.transferCost) {
@@ -31,7 +27,10 @@ export function GameComponent() {
     addMessage({ type: "START_TRAINING", payload: { playerName, stat } });
   };
 
+  console.log("rerender");
+
   const onDragEnd = (result: DropResult) => {
+    console.log("onDragEnd", result);
     const { source, destination } = result;
 
     if (!destination) {
@@ -100,7 +99,7 @@ export function GameComponent() {
                 <h2 className="text-2xl font-semibold mb-4">
                   Available Players
                 </h2>
-                <PlayerCards players={players} onAddPlayer={handleAddPlayer} />
+                <PlayerCards players={players} />
               </div>
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Your Team</h2>
