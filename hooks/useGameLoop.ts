@@ -39,7 +39,7 @@ export function useGameLoop() {
           players: [],
           availablePlayers: availablePlayers,
           currentTeam: [],
-          teams: teamData,
+          teams: [...teamData, { id: 0, name: "Current Team", players: [], points: 0, goalsFor: 0, goalsAgainst: 0 }],
           tick: 0,
           money: 100000,
           leagueTable: teamData,
@@ -225,6 +225,11 @@ export function useGameLoop() {
         default:
           break;
       }
+
+      // Update the current team in the teams list
+      newState.teams = newState.teams.map((team) =>
+        team.id === 0 ? { ...team, players: newState.currentTeam } : team
+      );
 
       return newState;
     });
