@@ -12,117 +12,87 @@ import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 
 export function GameComponent() {
   const { gameState, addMessage } = useGameLoop();
-  const { currentTeam, money, players, availablePlayers, teams } = gameState;
+  const { currentTeam, money, players, availablePlayers, teams, schedule, leagueTable } = gameState;
 
-  const handleTransferPlayer = (player: Player) => {
-    if (money >= player.transferCost) {
-      addMessage({ type: "TRANSFER_PLAYER", payload: player });
-    }
-  };
-
-  const handleStartTraining = (
-    playerName: string,
-    stat: keyof Player["skills"]
-  ) => {
-    addMessage({ type: "START_TRAINING", payload: { playerName, stat } });
-  };
-
-  console.log("rerender");
-
-  const onDragEnd = (result: DropResult) => {
-    console.log("onDragEnd", result);
-    const { source, destination } = result;
-
-    if (!destination) {
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) {
       return;
     }
 
-    if (
-      source.droppableId === destination.droppableId &&
-      source.index === destination.index
-    ) {
-      return;
-    }
-
-    if (
-      source.droppableId === "availablePlayers" &&
-      destination.droppableId !== "availablePlayers"
-    ) {
-      const player = players[source.index];
-      if (player && player.id) {
+    if (result.source.droppableId === "availablePlayers" && result.destination.droppableId !== "availablePlayers") {
+      const player = players.find((p) => p.id.toString() === result.draggableId);
+      if (player) {
         addMessage({
           type: "UPDATE_PLAYER_POSITION",
-          payload: { player, newPosition: destination.droppableId },
+          payload: { newPosition: result.destination.droppableId, player },
         });
       }
-    } else if (
-      source.droppableId !== "availablePlayers" &&
-      destination.droppableId === "availablePlayers"
-    ) {
-      const player = currentTeam.find(
-        (p) => p && p.id && p.position === source.droppableId
-      );
-      if (player && player.id) {
-        addMessage({
-          type: "REMOVE_PLAYER_POSITION",
-          payload: { playerId: player.id },
-        });
-      }
-    } else if (
-      source.droppableId !== "availablePlayers" &&
-      destination.droppableId !== "availablePlayers"
-    ) {
+    } else if (result.source.droppableId !== "availablePlayers" && result.destination.droppableId === "availablePlayers") {
+      addMessage({
+        type: "REMOVE_PLAYER_POSITION",
+        payload: { playerId: parseInt(result.draggableId) },
+      });
+    } else if (result.source.droppableId !== "availablePlayers" && result.destination.droppableId !== "availablePlayers") {
       addMessage({
         type: "SWAP_PLAYER_POSITIONS",
-        payload: {
-          sourcePosition: source.droppableId,
-          destPosition: destination.droppableId,
-        },
+        payload: { sourcePosition: result.source.droppableId, destPosition: result.destination.droppableId },
       });
     }
   };
 
+  const handleStartTraining = (playerName: string, stat: keyof Player["skills"]) => {
+    const player = players.find((p) => p.name === playerName);
+    if (player) {
+      addMessage({
+        type: "START_TRAINING",
+        payload: { playerId: player.id, stat },
+      });
+    }
+  };
+
+  const handleTransferPlayer = (player: Player) => {
+    addMessage({
+      type: "TRANSFER_PLAYER",
+      payload: player,
+    });
+  };
+
+  const handlePlayMatch = (match: Match) => {
+    addMessage({
+      type: "PLAY_MATCH",
+      payload: match,
+    });
+  };
+
   return (
-    <div className="p-4 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Team Management</h1>
-      <Tabs defaultValue="team" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
+    <div className="container mx-auto p-4">
+      <Tabs defaultValue="team">
+        <TabsList>
           <TabsTrigger value="team">Team</TabsTrigger>
           <TabsTrigger value="training">Training</TabsTrigger>
-          <TabsTrigger value="transfers">Transfers</TabsTrigger>
           <TabsTrigger value="matches">Matches</TabsTrigger>
+          <TabsTrigger value="transfer">Transfer</TabsTrigger>
         </TabsList>
         <TabsContent value="team">
-          <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">
-                  Available Players
-                </h2>
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="md:w-1/2">
                 <PlayerCards players={players} />
               </div>
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Your Team</h2>
+              <div className="md:w-1/2">
                 <SoccerField players={currentTeam} />
               </div>
             </div>
           </DragDropContext>
         </TabsContent>
         <TabsContent value="training">
-          <TrainingComponent
-            players={players}
-            onStartTraining={handleStartTraining}
-          />
-        </TabsContent>
-        <TabsContent value="transfers">
-          <TransferComponent
-            availablePlayers={availablePlayers}
-            onTransferPlayer={handleTransferPlayer}
-            money={money}
-          />
+          <TrainingComponent players={players} onStartTraining={handleStartTraining} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesComponent teams={teams} />
+          <MatchesComponent teams={leagueTable} schedule={schedule} onPlayMatch={handlePlayMatch} />
+        </TabsContent>
+        <TabsContent value="transfer">
+          <TransferComponent availablePlayers={availablePlayers} onTransferPlayer={handleTransferPlayer} money={money} />
         </TabsContent>
       </Tabs>
     </div>
