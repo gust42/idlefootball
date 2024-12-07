@@ -238,7 +238,7 @@ export function useGameLoop() {
   useEffect(() => {
     const interval = setInterval(() => {
       setGameState((prevState) => {
-        const newState = { ...prevState, tick: prevState.tick + 1 };
+        let newState = { ...prevState, tick: prevState.tick + 1 };
 
         newState.players = newState.players.map((player) => {
           if (player.training) {
@@ -268,6 +268,13 @@ export function useGameLoop() {
           }
           return player;
         });
+
+        if (newState.tick % 10 === 0) {
+          const nextMatch = newState.schedule[0];
+          if (nextMatch) {
+            newState = handlePlayMatch(newState, nextMatch);
+          }
+        }
 
         return newState;
       });
