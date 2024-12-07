@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { players } from "../data/playerData";
 import { teamData, getAllTeamPlayers } from "../data/teamData";
-import { Player, GameState, GameMessage } from "../types/game";
+import { Player, GameState, GameMessage, Match, Team } from "../types/game";
 
 export function useGameLoop() {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -16,6 +16,23 @@ export function useGameLoop() {
         })
     );
 
+    const generateSchedule = (teams: Team[]): Match[] => {
+      const schedule: Match[] = [];
+      const numTeams = teams.length;
+
+      for (let i = 0; i < numTeams - 1; i++) {
+        for (let j = 0; j < numTeams / 2; j++) {
+          const homeTeam = teams[j];
+          const awayTeam = teams[numTeams - 1 - j];
+          schedule.push({ homeTeam, awayTeam, homeGoals: 0, awayGoals: 0 });
+          schedule.push({ homeTeam: awayTeam, awayTeam: homeTeam, homeGoals: 0, awayGoals: 0 });
+        }
+        teams.splice(1, 0, teams.pop()!);
+      }
+
+      return schedule;
+    };
+
     return savedState
       ? JSON.parse(savedState)
       : {
@@ -25,6 +42,8 @@ export function useGameLoop() {
           teams: teamData,
           tick: 0,
           money: 100000,
+          leagueTable: teamData,
+          schedule: generateSchedule(teamData),
         };
   });
 
@@ -125,6 +144,43 @@ export function useGameLoop() {
     };
   };
 
+  const handlePlayMatch = (newState: GameState, match: Match) => {
+    const calculateTeamStrength = (team: Team) => {
+      return team.players.reduce((total, player) => {
+        return total + player.skills.shooting + player.skills.passing + player.skills.defending + player.skills.workrate;
+      }, 0);
+    };
+
+    const homeStrength = calculateTeamStrength(match.homeTeam) * 1.1; // Home advantage
+    const awayStrength = calculateTeamStrength(match.awayTeam);
+    const totalStrength = homeStrength + awayStrength;
+
+    const homeGoals = Math.round((homeStrength / totalStrength) * 5 + Math.random() * 2);
+    const awayGoals = Math.round((awayStrength / totalStrength) * 5 + Math.random() * 2);
+
+    match.homeGoals = homeGoals;
+    match.awayGoals = awayGoals;
+
+    const updateTeamStats = (team: Team, goalsFor: number, goalsAgainst: number) => {
+      team.goalsFor += goalsFor;
+      team.goalsAgainst += goalsAgainst;
+      if (goalsFor > goalsAgainst) {
+        team.points += 3;
+      } else if (goalsFor === goalsAgainst) {
+        team.points += 1;
+      }
+    };
+
+    updateTeamStats(match.homeTeam, homeGoals, awayGoals);
+    updateTeamStats(match.awayTeam, awayGoals, homeGoals);
+
+    return {
+      ...newState,
+      leagueTable: [...newState.leagueTable],
+      schedule: newState.schedule.filter((m) => m !== match),
+    };
+  };
+
   const addMessage = useCallback((message: GameMessage) => {
     setGameState((prevState) => {
       let newState = { ...prevState };
@@ -160,91 +216,70 @@ export function useGameLoop() {
             message.payload as { sourcePosition: string; destPosition: string }
           );
           break;
+        case "PLAY_MATCH":
+          newState = handlePlayMatch(
+            newState,
+            message.payload as Match
+          );
+          break;
+        default:
+          break;
       }
 
-      if (JSON.stringify(newState) !== JSON.stringify(prevState)) {
-        console.log("New game state:", newState);
-        return newState;
-      }
-      return prevState;
+      return newState;
     });
   }, []);
 
   useEffect(() => {
-    const gameLoop = () => {
-      const now = Date.now();
-      const deltaTime = now - lastUpdateTimeRef.current;
+    const interval = setInterval(() => {
+      setGameState((prevState) => {
+        const newState = { ...prevState, tick: prevState.tick + 1 };
 
-      if (deltaTime >= 1000) {
-        setGameState((prevState) => {
-          const newTick = prevState.tick + 1;
-          const updatedPlayers = prevState.players.map((player) => {
-            if (player.training && player.training.ticksRemaining > 0) {
-              const newTicksRemaining = player.training.ticksRemaining - 1;
-              if (newTicksRemaining === 0) {
-                // Training completed
-                return {
-                  ...player,
-                  skills: {
-                    ...player.skills,
-                    [player.training.stat]:
-                      player.skills[player.training.stat] + 1,
-                  },
-                  training: null,
-                };
-              } else {
-                // Continue training
-                return {
-                  ...player,
-                  training: {
-                    ...player.training,
-                    ticksRemaining: newTicksRemaining,
-                  },
-                };
-              }
+        newState.players = newState.players.map((player) => {
+          if (player.training) {
+            const newTicksRemaining = player.training.ticksRemaining - 1;
+            if (newTicksRemaining <= 0) {
+              const newSkills = {
+                ...player.skills,
+                [player.training.stat]: Math.min(
+                  player.skills[player.training.stat] + 1,
+                  player.maxSkills[player.training.stat]
+                ),
+              };
+              return {
+                ...player,
+                skills: newSkills,
+                training: null,
+              };
+            } else {
+              return {
+                ...player,
+                training: {
+                  ...player.training,
+                  ticksRemaining: newTicksRemaining,
+                },
+              };
             }
-            return player;
-          });
-
-          const newState = {
-            ...prevState,
-            players: updatedPlayers,
-            tick: newTick,
-          };
-
-          if (JSON.stringify(newState) !== JSON.stringify(prevState)) {
-            return newState;
           }
-          return prevState;
+          return player;
         });
 
-        lastUpdateTimeRef.current = now;
-      }
+        return newState;
+      });
+    }, 1000);
 
-      requestAnimationFrame(gameLoop);
-    };
-
-    const ref = requestAnimationFrame(gameLoop);
-
-    return () => cancelAnimationFrame(ref);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    if (previousGameStateRef.current !== gameState) {
-      localStorage.setItem("gameState", JSON.stringify(gameState));
-      previousGameStateRef.current = gameState;
+    if (previousGameStateRef.current) {
+      const previousGameState = previousGameStateRef.current;
+      if (previousGameState.tick !== gameState.tick) {
+        //localStorage.setItem("gameState", JSON.stringify(gameState));
+      }
     }
+    previousGameStateRef.current = gameState;
   }, [gameState]);
 
-  const getRandomPlayers = useCallback(
-    (count: number): Player[] => {
-      const shuffled = [...gameState.availablePlayers].sort(
-        () => 0.5 - Math.random()
-      );
-      return shuffled.slice(0, count);
-    },
-    [gameState.availablePlayers]
-  );
-
-  return { gameState, addMessage, getRandomPlayers };
+  return { gameState, addMessage };
 }

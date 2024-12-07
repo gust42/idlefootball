@@ -36,4 +36,3 @@ export function LeagueTable({ teams }: LeagueTableProps) {
     </Table>
   );
 }
-

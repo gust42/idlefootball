@@ -31,6 +31,13 @@ export interface Team {
   goalsAgainst: number;
 }
 
+export interface Match {
+  homeTeam: Team;
+  awayTeam: Team;
+  homeGoals: number;
+  awayGoals: number;
+}
+
 export interface GameState {
   players: Player[];
   availablePlayers: Player[];
@@ -38,6 +45,8 @@ export interface GameState {
   teams: Team[];
   tick: number;
   money: number;
+  leagueTable: Team[];
+  schedule: Match[];
 }
 
 export interface GameMessage {
