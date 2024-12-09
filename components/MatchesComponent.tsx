@@ -1,17 +1,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LeagueTable } from './LeagueTable';
-import { Team, Match } from '../types/game';
+import { Team, Match, Round } from '../types/game';
 import { Button } from "@/components/ui/button";
 
 interface MatchesComponentProps {
   teams: Team[];
-  schedule: Match[];
+  schedule: Round[];
   onPlayMatch: (match: Match) => void;
 }
 
 export function MatchesComponent({ teams, schedule, onPlayMatch }: MatchesComponentProps) {
-  const upcomingMatches = schedule.slice(0, 5);
+  const upcomingRounds = schedule.slice(0, 5);
   const matchHistory = schedule.slice(5);
 
   return (
@@ -29,10 +29,15 @@ export function MatchesComponent({ teams, schedule, onPlayMatch }: MatchesCompon
           <CardTitle>Upcoming Matches</CardTitle>
         </CardHeader>
         <CardContent>
-          {upcomingMatches.map((match, index) => (
-            <div key={index} className="mb-4">
-              <p>{match.homeTeam.name} vs {match.awayTeam.name}</p>
-              <Button onClick={() => onPlayMatch(match)}>Play</Button>
+          {upcomingRounds.map((round, roundIndex) => (
+            <div key={roundIndex} className="mb-4">
+              <p>Round {roundIndex + 1}</p>
+              {round.matches.map((match, matchIndex) => (
+                <div key={matchIndex} className="mb-4">
+                  <p>{match.homeTeam.name} vs {match.awayTeam.name}</p>
+                  <Button onClick={() => onPlayMatch(match)}>Play</Button>
+                </div>
+              ))}
             </div>
           ))}
         </CardContent>
@@ -42,9 +47,14 @@ export function MatchesComponent({ teams, schedule, onPlayMatch }: MatchesCompon
           <CardTitle>Match History</CardTitle>
         </CardHeader>
         <CardContent>
-          {matchHistory.map((match, index) => (
-            <div key={index} className="mb-4">
-              <p>{match.homeTeam.name} {match.homeGoals} - {match.awayGoals} {match.awayTeam.name}</p>
+          {matchHistory.map((round, roundIndex) => (
+            <div key={roundIndex} className="mb-4">
+              <p>Round {roundIndex + 1}</p>
+              {round.matches.map((match, matchIndex) => (
+                <div key={matchIndex} className="mb-4">
+                  <p>{match.homeTeam.name} {match.homeGoals} - {match.awayGoals} {match.awayTeam.name}</p>
+                </div>
+              ))}
             </div>
           ))}
         </CardContent>

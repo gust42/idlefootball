@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { players } from "../data/playerData";
 import { teamData, getAllTeamPlayers } from "../data/teamData";
 import { Player, GameState, GameMessage, Match, Team } from "../types/game";
+import { generateSchedule } from "../utils/scheduleGenerator";
 
 export function useGameLoop() {
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -15,23 +16,6 @@ export function useGameLoop() {
           return tp?.id === player.id;
         })
     );
-
-    const generateSchedule = (teams: Team[]): Match[] => {
-      const schedule: Match[] = [];
-      const numTeams = teams.length;
-
-      for (let i = 0; i < numTeams - 1; i++) {
-        for (let j = 0; j < numTeams / 2; j++) {
-          const homeTeam = teams[j];
-          const awayTeam = teams[numTeams - 1 - j];
-          schedule.push({ homeTeam, awayTeam, homeGoals: 0, awayGoals: 0 });
-          schedule.push({ homeTeam: awayTeam, awayTeam: homeTeam, homeGoals: 0, awayGoals: 0 });
-        }
-        teams.splice(1, 0, teams.pop()!);
-      }
-
-      return schedule;
-    };
 
     return savedState
       ? JSON.parse(savedState)
