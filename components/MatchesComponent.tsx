@@ -1,16 +1,14 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LeagueTable } from './LeagueTable';
-import { Team, Match, Round } from '../types/game';
-import { Button } from "@/components/ui/button";
+import { Team, Round } from '../types/game';
 
 interface MatchesComponentProps {
   teams: Team[];
   schedule: Round[];
-  onPlayMatch: (match: Match) => void;
 }
 
-export function MatchesComponent({ teams, schedule, onPlayMatch }: MatchesComponentProps) {
+export function MatchesComponent({ teams, schedule }: MatchesComponentProps) {
   const upcomingRounds = schedule.slice(0, 5);
   const matchHistory = schedule.slice(5);
 
@@ -35,7 +33,6 @@ export function MatchesComponent({ teams, schedule, onPlayMatch }: MatchesCompon
               {round.matches.map((match, matchIndex) => (
                 <div key={matchIndex} className="mb-4">
                   <p>{match.homeTeam.name} vs {match.awayTeam.name}</p>
-                  <Button onClick={() => onPlayMatch(match)}>Play</Button>
                 </div>
               ))}
             </div>

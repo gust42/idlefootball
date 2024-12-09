@@ -61,6 +61,7 @@ export interface GameMessage {
     | "TRANSFER_PLAYER"
     | "UPDATE_PLAYER_POSITION"
     | "REMOVE_PLAYER_POSITION"
-    | "SWAP_PLAYER_POSITIONS";
+    | "SWAP_PLAYER_POSITIONS"
+    | "PLAY_ROUND";
   payload: unknown;
 }
