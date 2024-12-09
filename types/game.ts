@@ -38,6 +38,10 @@ export interface Match {
   awayGoals: number;
 }
 
+export interface Round {
+  matches: Match[];
+}
+
 export interface GameState {
   players: Player[];
   availablePlayers: Player[];
@@ -46,7 +50,7 @@ export interface GameState {
   tick: number;
   money: number;
   leagueTable: Team[];
-  schedule: Match[];
+  schedule: Round[];
 }
 
 export interface GameMessage {
