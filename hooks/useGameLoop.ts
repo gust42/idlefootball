@@ -1,180 +1,22 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { players } from "../data/playerData";
-import { teamData, getAllTeamPlayers } from "../data/teamData";
-import { Player, GameState, GameMessage, Match, Team } from "../types/game";
-import { generateSchedule } from "../utils/scheduleGenerator";
+import { useCallback, useEffect, useRef } from "react";
+import { Player, GameMessage, Match } from "../types/game";
+import { useGameState } from "./useGameState";
+import {
+  handleTransferPlayer,
+  handleStartTraining,
+  handleUpdatePlayerPosition,
+  handleRemovePlayerPosition,
+  handleSwapPlayerPositions,
+  handlePlayMatch,
+  handlePlayRound,
+} from "./useGameHandlers";
 
 export function useGameLoop() {
-  const [gameState, setGameState] = useState<GameState>(() => {
-    const savedState = null; //localStorage.getItem("gameState");
-    const teamPlayers = getAllTeamPlayers();
-    const availablePlayers = players.filter(
-      (player) =>
-        !teamPlayers.some((tp) => {
-          return tp?.id === player.id;
-        })
-    );
-
-    return savedState
-      ? JSON.parse(savedState)
-      : {
-          players: [],
-          availablePlayers: availablePlayers,
-          currentTeam: [],
-          teams: [...teamData, { id: 0, name: "Current Team", players: [], points: 0, goalsFor: 0, goalsAgainst: 0 }],
-          tick: 0,
-          money: 100000,
-          leagueTable: teamData,
-          schedule: generateSchedule(teamData),
-        };
-  });
+  const { gameState, setGameState } = useGameState();
 
   const previousGameStateRef = useRef<GameState | null>(null);
-  const lastUpdateTimeRef = useRef<number>(Date.now());
-
-  const handleTransferPlayer = (newState: GameState, payload: Player) => {
-    if (payload && payload.id != null) {
-      return {
-        ...newState,
-        players: [...newState.players, payload],
-        availablePlayers: newState.availablePlayers.filter(
-          (p) => p.id !== payload.id
-        ),
-        money: newState.money - payload.transferCost,
-      };
-    }
-    return newState;
-  };
-
-  const handleStartTraining = (
-    newState: GameState,
-    payload: { playerId: number; stat: keyof Player["maxSkills"] }
-  ) => {
-    return {
-      ...newState,
-      players: newState.players.map((player) =>
-        player.id === payload.playerId
-          ? {
-              ...player,
-              training: {
-                stat: payload.stat,
-                ticksRemaining: 10,
-              },
-            }
-          : player
-      ),
-    };
-  };
-
-  const handleUpdatePlayerPosition = (
-    newState: GameState,
-    payload: { newPosition: string; player: Player }
-  ) => {
-    const playerToUpdate = payload.player;
-    if (playerToUpdate && playerToUpdate.id != null) {
-      return {
-        ...newState,
-        currentTeam: [
-          ...newState.currentTeam.filter(
-            (p) => p.position !== payload.newPosition
-          ),
-          { ...playerToUpdate, position: payload.newPosition },
-        ],
-        players: newState.players.filter((p) => p.id !== playerToUpdate.id),
-      };
-    }
-    return newState;
-  };
-
-  const handleRemovePlayerPosition = (
-    newState: GameState,
-    payload: { playerId: number }
-  ) => {
-    const removedPlayer = newState.currentTeam.find(
-      (p) => p.id === payload.playerId
-    );
-    if (removedPlayer) {
-      return {
-        ...newState,
-        currentTeam: newState.currentTeam.filter(
-          (p) => p.id !== payload.playerId
-        ),
-        players: [
-          ...newState.players,
-          { ...removedPlayer, position: undefined },
-        ],
-      };
-    }
-    return newState;
-  };
-
-  const handleSwapPlayerPositions = (
-    newState: GameState,
-    payload: { sourcePosition: string; destPosition: string }
-  ) => {
-    return {
-      ...newState,
-      currentTeam: newState.currentTeam.map((player) => {
-        if (player.position === payload.sourcePosition) {
-          return { ...player, position: payload.destPosition };
-        }
-        if (player.position === payload.destPosition) {
-          return { ...player, position: payload.sourcePosition };
-        }
-        return player;
-      }),
-    };
-  };
-
-  const handlePlayMatch = (newState: GameState, match: Match) => {
-    const calculateTeamStrength = (team: Team) => {
-      return team.players.reduce((total, player) => {
-        return total + player.skills.shooting + player.skills.passing + player.skills.defending + player.skills.workrate;
-      }, 0);
-    };
-
-    const homeStrength = calculateTeamStrength(match.homeTeam) * 1.1; // Home advantage
-    const awayStrength = calculateTeamStrength(match.awayTeam);
-    const totalStrength = homeStrength + awayStrength;
-
-    const homeGoals = Math.round((homeStrength / totalStrength) * 5 + Math.random() * 2);
-    const awayGoals = Math.round((awayStrength / totalStrength) * 5 + Math.random() * 2);
-
-    match.homeGoals = homeGoals;
-    match.awayGoals = awayGoals;
-
-    const updateTeamStats = (team: Team, goalsFor: number, goalsAgainst: number) => {
-      team.goalsFor += goalsFor;
-      team.goalsAgainst += goalsAgainst;
-      if (goalsFor > goalsAgainst) {
-        team.points += 3;
-      } else if (goalsFor === goalsAgainst) {
-        team.points += 1;
-      }
-    };
-
-    updateTeamStats(match.homeTeam, homeGoals, awayGoals);
-    updateTeamStats(match.awayTeam, awayGoals, homeGoals);
-
-    return {
-      ...newState,
-      leagueTable: [...newState.leagueTable],
-      schedule: newState.schedule.filter((m) => m !== match),
-    };
-  };
-
-  const handlePlayRound = (newState: GameState) => {
-    const currentRound = newState.schedule[0];
-    currentRound.matches.forEach((match) => {
-      newState = handlePlayMatch(newState, match);
-    });
-    return {
-      ...newState,
-      schedule: newState.schedule.slice(1),
-    };
-  };
 
   const addMessage = useCallback((message: GameMessage) => {
     setGameState((prevState) => {
@@ -282,7 +124,7 @@ export function useGameLoop() {
     if (previousGameStateRef.current) {
       const previousGameState = previousGameStateRef.current;
       if (previousGameState.tick !== gameState.tick) {
-        //localStorage.setItem("gameState", JSON.stringify(gameState));
+        localStorage.setItem("gameState", JSON.stringify(gameState));
       }
     }
     previousGameStateRef.current = gameState;
