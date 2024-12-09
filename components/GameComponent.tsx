@@ -12,7 +12,7 @@ import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 
 export function GameComponent() {
   const { gameState, addMessage } = useGameLoop();
-  const { currentTeam, money, players, availablePlayers, teams, schedule, leagueTable } = gameState;
+  const { currentTeam, money, players, availablePlayers, teams, schedule, leagueTable, currentRound } = gameState;
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) {
@@ -57,13 +57,6 @@ export function GameComponent() {
     });
   };
 
-  const handlePlayMatch = (match: Match) => {
-    addMessage({
-      type: "PLAY_MATCH",
-      payload: match,
-    });
-  };
-
   return (
     <div className="container mx-auto p-4">
       <Tabs defaultValue="team">
@@ -89,7 +82,7 @@ export function GameComponent() {
           <TrainingComponent players={players} onStartTraining={handleStartTraining} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesComponent teams={leagueTable} schedule={schedule} onPlayMatch={handlePlayMatch} />
+          <MatchesComponent teams={leagueTable} schedule={schedule} currentRound={currentRound}/>
         </TabsContent>
         <TabsContent value="transfer">
           <TransferComponent availablePlayers={availablePlayers} onTransferPlayer={handleTransferPlayer} money={money} />

@@ -1,18 +1,17 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LeagueTable } from './LeagueTable';
-import { Team, Match, Round } from '../types/game';
-import { Button } from "@/components/ui/button";
+import { Team, Round } from '../types/game';
 
 interface MatchesComponentProps {
   teams: Team[];
   schedule: Round[];
-  onPlayMatch: (match: Match) => void;
+  currentRound: number;
 }
 
-export function MatchesComponent({ teams, schedule, onPlayMatch }: MatchesComponentProps) {
-  const upcomingRounds = schedule.slice(0, 5);
-  const matchHistory = schedule.slice(5);
+export function MatchesComponent({ teams, schedule, currentRound }: MatchesComponentProps) {
+  const upcomingRounds = schedule.slice(currentRound, currentRound + 5);
+  const matchHistory = schedule.slice(0, currentRound);
 
   return (
     <div className="grid gap-6">
@@ -31,11 +30,10 @@ export function MatchesComponent({ teams, schedule, onPlayMatch }: MatchesCompon
         <CardContent>
           {upcomingRounds.map((round, roundIndex) => (
             <div key={roundIndex} className="mb-4">
-              <p>Round {roundIndex + 1}</p>
+              <p>Round {currentRound + roundIndex + 1}</p>
               {round.matches.map((match, matchIndex) => (
                 <div key={matchIndex} className="mb-4">
                   <p>{match.homeTeam.name} vs {match.awayTeam.name}</p>
-                  <Button onClick={() => onPlayMatch(match)}>Play</Button>
                 </div>
               ))}
             </div>
