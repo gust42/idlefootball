@@ -6,11 +6,12 @@ import { Team, Round } from '../types/game';
 interface MatchesComponentProps {
   teams: Team[];
   schedule: Round[];
+  currentRound: number;
 }
 
-export function MatchesComponent({ teams, schedule }: MatchesComponentProps) {
-  const upcomingRounds = schedule.slice(0, 5);
-  const matchHistory = schedule.slice(5);
+export function MatchesComponent({ teams, schedule, currentRound }: MatchesComponentProps) {
+  const upcomingRounds = schedule.slice(currentRound, currentRound + 5);
+  const matchHistory = schedule.slice(0, currentRound);
 
   return (
     <div className="grid gap-6">
@@ -29,7 +30,7 @@ export function MatchesComponent({ teams, schedule }: MatchesComponentProps) {
         <CardContent>
           {upcomingRounds.map((round, roundIndex) => (
             <div key={roundIndex} className="mb-4">
-              <p>Round {roundIndex + 1}</p>
+              <p>Round {currentRound + roundIndex + 1}</p>
               {round.matches.map((match, matchIndex) => (
                 <div key={matchIndex} className="mb-4">
                   <p>{match.homeTeam.name} vs {match.awayTeam.name}</p>

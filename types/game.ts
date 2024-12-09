@@ -51,6 +51,7 @@ export interface GameState {
   money: number;
   leagueTable: Team[];
   schedule: Round[];
+  currentRound: number;
 }
 
 export interface GameMessage {
