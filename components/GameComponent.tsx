@@ -12,7 +12,7 @@ import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 
 export function GameComponent() {
   const { gameState, addMessage } = useGameLoop();
-  const { currentTeam, money, players, availablePlayers, teams, schedule, leagueTable } = gameState;
+  const { currentTeam, money, players, availablePlayers, teams, schedule, leagueTable, currentRound } = gameState;
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) {
@@ -82,7 +82,7 @@ export function GameComponent() {
           <TrainingComponent players={players} onStartTraining={handleStartTraining} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesComponent teams={leagueTable} schedule={schedule} />
+          <MatchesComponent teams={leagueTable} schedule={schedule} currentRound={currentRound}/>
         </TabsContent>
         <TabsContent value="transfer">
           <TransferComponent availablePlayers={availablePlayers} onTransferPlayer={handleTransferPlayer} money={money} />

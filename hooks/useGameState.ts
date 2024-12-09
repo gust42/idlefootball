@@ -6,7 +6,7 @@ import { generateSchedule } from "../utils/scheduleGenerator";
 
 export function useGameState() {
   const [gameState, setGameState] = useState<GameState>(() => {
-    const savedState = localStorage.getItem("gameState");
+    const savedState = null// localStorage.getItem("gameState");
     const teamPlayers = getAllTeamPlayers();
     const availablePlayers = players.filter(
       (player) =>
@@ -26,6 +26,7 @@ export function useGameState() {
           money: 100000,
           leagueTable: teamData,
           schedule: generateSchedule(teamData),
+          currentRound: 0,
         };
   });
 

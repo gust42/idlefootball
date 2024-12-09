@@ -132,12 +132,15 @@ export function handlePlayMatch(newState: GameState, match: Match) {
 }
 
 export function handlePlayRound(newState: GameState) {
-  const currentRound = newState.schedule[0];
+  const currentRound = newState.schedule[newState.currentRound];
+  if (!currentRound) {
+    return newState;
+  }
   currentRound.matches.forEach((match) => {
     newState = handlePlayMatch(newState, match);
   });
   return {
     ...newState,
-    schedule: newState.schedule.slice(1),
+    currentRound: newState.currentRound + 1,
   };
 }
