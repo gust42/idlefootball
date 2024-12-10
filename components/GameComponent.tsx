@@ -1,6 +1,8 @@
 "use client";
 import React from "react";
+import { useSnapshot } from "valtio";
 import { useGameLoop } from "../hooks/useGameLoop";
+import { gameState } from "../hooks/useGameState";
 import { PlayerCards } from "./PlayerCards";
 import { SoccerField } from "./SoccerField";
 import { Player } from "../types/game";
@@ -11,16 +13,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 
 export function GameComponent() {
-  const { gameState, addMessage } = useGameLoop();
-  const { currentTeam, money, players, availablePlayers, teams, schedule, leagueTable, currentRound } = gameState;
-
+  const { addMessage } = useGameLoop();
+  const snapshot = useSnapshot(gameState);
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) {
       return;
     }
 
     if (result.source.droppableId === "availablePlayers" && result.destination.droppableId !== "availablePlayers") {
-      const player = players.find((p) => p.id.toString() === result.draggableId);
+      const player = gameState.players.find((p) => p.id.toString() === result.draggableId);
       if (player) {
         addMessage({
           type: "UPDATE_PLAYER_POSITION",
@@ -41,7 +42,7 @@ export function GameComponent() {
   };
 
   const handleStartTraining = (playerName: string, stat: keyof Player["skills"]) => {
-    const player = players.find((p) => p.name === playerName);
+    const player = gameState.players.find((p) => p.name === playerName);
     if (player) {
       addMessage({
         type: "START_TRAINING",
@@ -57,8 +58,6 @@ export function GameComponent() {
     });
   };
 
-  console.log(currentRound);
-
   return (
     <div className="container mx-auto p-4">
       <Tabs defaultValue="team">
@@ -72,22 +71,22 @@ export function GameComponent() {
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="flex flex-col md:flex-row gap-4">
               <div className="md:w-1/2">
-                <PlayerCards players={players} />
+                <PlayerCards />
               </div>
               <div className="md:w-1/2">
-                <SoccerField players={currentTeam} />
+                <SoccerField />
               </div>
             </div>
           </DragDropContext>
         </TabsContent>
         <TabsContent value="training">
-          <TrainingComponent players={players} onStartTraining={handleStartTraining} />
+          <TrainingComponent onStartTraining={handleStartTraining} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesComponent teams={teams} schedule={schedule} currentRound={currentRound}/>
+          <MatchesComponent />
         </TabsContent>
         <TabsContent value="transfer">
-          <TransferComponent availablePlayers={availablePlayers} onTransferPlayer={handleTransferPlayer} money={money} />
+          <TransferComponent onTransferPlayer={handleTransferPlayer} />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,6 +1,8 @@
 import React from "react";
 import { Droppable, Draggable } from "@hello-pangea/dnd";
 import { Player } from "../types/game";
+import { useSnapshot } from 'valtio';
+import { gameState } from '../hooks/useGameState';
 
 interface Position {
   id: string;
@@ -10,7 +12,6 @@ interface Position {
 }
 
 interface SoccerFieldProps {
-  players: Player[];
 }
 
 const positions: Position[] = [
@@ -27,7 +28,8 @@ const positions: Position[] = [
   { id: "forward2", name: "ST", x: 65, y: 10 },
 ];
 
-export function SoccerField({ players }: SoccerFieldProps) {
+export function SoccerField({}: SoccerFieldProps) {
+  const snapshot = useSnapshot(gameState);
   return (
     <div className="relative w-full h-[600px] bg-green-600 border-2 border-white rounded-lg overflow-hidden">
       {/* Field markings */}
@@ -53,7 +55,7 @@ export function SoccerField({ players }: SoccerFieldProps) {
               }}
             >
               {(() => {
-                const player = players.find(
+                const player = snapshot.players?.find(
                   (p) => p && p.id != null && p.position === position.id
                 );
                 return player ? (

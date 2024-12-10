@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, createContext, useContext } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useSnapshot } from "valtio";
 import { Player, GameMessage, Match, GameState } from "../types/game";
 import { useGameState } from "./useGameState";
 import {
@@ -37,75 +38,66 @@ function stopGameLoop() {
 }
 
 export function useGameLoop() {
-  const { gameState, setGameState } = useGameState();
+  const { gameState } = useGameState();
 
   const previousGameStateRef = useRef<GameState | null>(null);
 
   const addMessage = useCallback((message: GameMessage) => {
-    setGameState((prevState) => {
-      let newState = { ...prevState };
+    switch (message.type) {
+      case "TRANSFER_PLAYER":
+        handleTransferPlayer(gameState, message.payload as Player);
+        break;
+      case "START_TRAINING":
+        handleStartTraining(
+          gameState,
+          message.payload as {
+            playerId: number;
+            stat: keyof Player["maxSkills"];
+          }
+        );
+        break;
+      case "UPDATE_PLAYER_POSITION":
+        handleUpdatePlayerPosition(
+          gameState,
+          message.payload as { newPosition: string; player: Player }
+        );
+        break;
+      case "REMOVE_PLAYER_POSITION":
+        handleRemovePlayerPosition(
+          gameState,
+          message.payload as { playerId: number }
+        );
+        break;
+      case "SWAP_PLAYER_POSITIONS":
+        handleSwapPlayerPositions(
+          gameState,
+          message.payload as { sourcePosition: string; destPosition: string }
+        );
+        break;
+      case "PLAY_MATCH":
+        handlePlayMatch(
+          gameState,
+          message.payload as Match
+        );
+        break;
+      case "PLAY_ROUND":
+        handlePlayRound(gameState);
+        break;
+      default:
+        break;
+    }
 
-      switch (message.type) {
-        case "TRANSFER_PLAYER":
-          newState = handleTransferPlayer(newState, message.payload as Player);
-          break;
-        case "START_TRAINING":
-          newState = handleStartTraining(
-            newState,
-            message.payload as {
-              playerId: number;
-              stat: keyof Player["maxSkills"];
-            }
-          );
-          break;
-        case "UPDATE_PLAYER_POSITION":
-          newState = handleUpdatePlayerPosition(
-            newState,
-            message.payload as { newPosition: string; player: Player }
-          );
-          break;
-        case "REMOVE_PLAYER_POSITION":
-          newState = handleRemovePlayerPosition(
-            newState,
-            message.payload as { playerId: number }
-          );
-          break;
-        case "SWAP_PLAYER_POSITIONS":
-          newState = handleSwapPlayerPositions(
-            newState,
-            message.payload as { sourcePosition: string; destPosition: string }
-          );
-          break;
-        case "PLAY_MATCH":
-          newState = handlePlayMatch(
-            newState,
-            message.payload as Match
-          );
-          break;
-        case "PLAY_ROUND":
-          newState = handlePlayRound(newState);
-          break;
-        default:
-          break;
-      }
-
-      // Update the current team in the teams list
-      newState.teams = newState.teams.map((team) =>
-        team.id === 0 ? { ...team, players: newState.currentTeam } : team
-      );
-
-      return newState;
-    });
-  }, []);
+    // Update the current team in the teams list
+    gameState.teams = gameState.teams.map((team) =>
+      team.id === 0 ? { ...team, players: gameState.currentTeam } : team
+    );
+  }, [gameState]);
 
   const gameLoop = useCallback((timestamp: number) => {
     if (timestamp - lastTick >= 1000) {
-      setGameState((prevState) => {
-        let newState = { ...prevState, tick: prevState.tick + 1 };
+      gameState.tick += 1;
 
-
-        if (lastRunTick != newState.tick) {
-        newState.players = newState.players.map((player) => {
+        gameState.players = gameState.players.map((player) => {
           if (player.training) {
             const newTicksRemaining = player.training.ticksRemaining - 1;
             if (newTicksRemaining <= 0) {
@@ -134,18 +126,13 @@ export function useGameLoop() {
           return player;
         });
 
-        if (newState.tick % 10 === 0) {
-          newState = handlePlayRound(newState);
+        if (gameState.tick % 10 === 0) {
+          handlePlayRound(gameState);
         }
-
-        lastRunTick = newState.tick
-        }
-        return newState;
-      });
 
       lastTick = timestamp;
     }
-  }, []);
+  }, [gameState]);
 
   useEffect(() => {
     startGameLoop(gameLoop);
@@ -161,6 +148,5 @@ export function useGameLoop() {
     previousGameStateRef.current = gameState;
   }, [gameState]);
 
-  const gameLoopInstance = { gameState, addMessage };
-  return gameLoopInstance;
+  return { addMessage };
 }

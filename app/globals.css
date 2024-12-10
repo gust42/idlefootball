@@ -76,3 +76,55 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .matches-component {
+    @apply p-4 bg-white rounded-lg shadow-md;
+  }
+
+  .matches-component .card {
+    @apply mb-4;
+  }
+
+  .matches-component .card-header {
+    @apply bg-primary text-primary-foreground p-4 rounded-t-lg;
+  }
+
+  .matches-component .card-content {
+    @apply p-4;
+  }
+
+  .matches-component .highlight {
+    @apply bg-yellow-200;
+  }
+
+  .matches-component .clickable {
+    @apply cursor-pointer hover:bg-gray-100;
+  }
+
+  .matches-component .expandable {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .matches-component .expandable.collapsed {
+    @apply max-h-0 overflow-hidden;
+  }
+
+  .matches-component .expandable.expanded {
+    @apply max-h-full;
+  }
+}
+
+@media (max-width: 768px) {
+  .matches-component {
+    @apply p-2;
+  }
+
+  .matches-component .card-header {
+    @apply p-2;
+  }
+
+  .matches-component .card-content {
+    @apply p-2;
+  }
+}

@@ -1,27 +1,19 @@
 import { Player, GameState, Match, Team } from "../types/game";
 import { handlePlayMatch } from "./handlePlayMatch";
 
-export function handleTransferPlayer(newState: GameState, payload: Player) {
+export function handleTransferPlayer(gameState: GameState, payload: Player) {
   if (payload && payload.id != null) {
-    return {
-      ...newState,
-      players: [...newState.players, payload],
-      availablePlayers: newState.availablePlayers.filter(
-        (p) => p.id !== payload.id
-      ),
-      money: newState.money - payload.transferCost,
-    };
+    gameState.players =  [...gameState.players, payload];
+    gameState.availablePlayers = gameState.availablePlayers.filter((p) => p.id !== payload.id);
+    gameState.money = gameState.money - payload.transferCost;
   }
-  return newState;
 }
 
 export function handleStartTraining(
-  newState: GameState,
+  gameState: GameState,
   payload: { playerId: number; stat: keyof Player["maxSkills"] }
 ) {
-  return {
-    ...newState,
-    players: newState.players.map((player) =>
+  gameState.players = gameState.players.map((player) =>
       player.id === payload.playerId
         ? {
             ...player,
@@ -31,59 +23,48 @@ export function handleStartTraining(
             },
           }
         : player
-    ),
-  };
+    );
 }
 
 export function handleUpdatePlayerPosition(
-  newState: GameState,
+  gameState: GameState,
   payload: { newPosition: string; player: Player }
 ) {
   const playerToUpdate = payload.player;
   if (playerToUpdate && playerToUpdate.id != null) {
-    return {
-      ...newState,
-      currentTeam: [
-        ...newState.currentTeam.filter(
+    gameState.currentTeam = [
+        ...gameState.currentTeam.filter(
           (p) => p.position !== payload.newPosition
         ),
         { ...playerToUpdate, position: payload.newPosition },
-      ],
-      players: newState.players.filter((p) => p.id !== playerToUpdate.id),
-    };
+      ];
+    gameState.players = gameState.players.filter((p) => p.id !== playerToUpdate.id);
   }
-  return newState;
 }
 
 export function handleRemovePlayerPosition(
-  newState: GameState,
+  gameState: GameState,
   payload: { playerId: number }
 ) {
-  const removedPlayer = newState.currentTeam.find(
+  const removedPlayer = gameState.currentTeam.find(
     (p) => p.id === payload.playerId
   );
   if (removedPlayer) {
-    return {
-      ...newState,
-      currentTeam: newState.currentTeam.filter(
+    gameState.currentTeam = gameState.currentTeam.filter(
         (p) => p.id !== payload.playerId
-      ),
-      players: [
-        ...newState.players,
+      );
+    gameState.players = [
+        ...gameState.players,
         { ...removedPlayer, position: undefined },
-      ],
-    };
+      ]
   }
-  return newState;
 }
 
 export function handleSwapPlayerPositions(
-  newState: GameState,
+  gameState: GameState,
   payload: { sourcePosition: string; destPosition: string }
 ) {
-  return {
-    ...newState,
-    currentTeam: newState.currentTeam.map((player) => {
+  gameState.currentTeam = gameState.currentTeam.map((player) => {
       if (player.position === payload.sourcePosition) {
         return { ...player, position: payload.destPosition };
       }
@@ -91,20 +72,17 @@ export function handleSwapPlayerPositions(
         return { ...player, position: payload.sourcePosition };
       }
       return player;
-    }),
-  };
+    })
 }
 
-export function handlePlayRound(newState: GameState) {
-  const currentRound = newState.schedule[newState.currentRound];
+export function handlePlayRound(gameState: GameState) {
+  const currentRound = gameState.schedule[gameState.currentRound];
   if (!currentRound) {
-    return newState;
+    return gameState;
   }
   currentRound.matches.forEach((match) => {
-    newState = handlePlayMatch(newState, match);
+    handlePlayMatch(match);
   });
-  return {
-    ...newState,
-    currentRound: newState.currentRound + 1,
-  };
+
+  gameState.currentRound = gameState.currentRound + 1;
 }
