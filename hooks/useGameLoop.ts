@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-import { Player, GameMessage, Match } from "../types/game";
+import { useCallback, useEffect, useRef, createContext, useContext } from "react";
+import { Player, GameMessage, Match, GameState } from "../types/game";
 import { useGameState } from "./useGameState";
 import {
   handleTransferPlayer,
@@ -9,9 +9,32 @@ import {
   handleUpdatePlayerPosition,
   handleRemovePlayerPosition,
   handleSwapPlayerPositions,
-  handlePlayMatch,
   handlePlayRound,
 } from "./useGameHandlers";
+import { handlePlayMatch } from "./handlePlayMatch";
+
+let animationFrameId: number | null = null;
+let lastTick = 0;
+
+// Hack for react 18
+let lastRunTick = 0;
+
+function startGameLoop(callback: (timestamp: number) => void) {
+  if (animationFrameId === null) {
+    const gameLoop = (timestamp: number) => {
+      callback(timestamp);
+      animationFrameId = requestAnimationFrame(gameLoop);
+    };
+    animationFrameId = requestAnimationFrame(gameLoop);
+  }
+}
+
+function stopGameLoop() {
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+}
 
 export function useGameLoop() {
   const { gameState, setGameState } = useGameState();
@@ -75,11 +98,13 @@ export function useGameLoop() {
     });
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
+  const gameLoop = useCallback((timestamp: number) => {
+    if (timestamp - lastTick >= 1000) {
       setGameState((prevState) => {
         let newState = { ...prevState, tick: prevState.tick + 1 };
 
+
+        if (lastRunTick != newState.tick) {
         newState.players = newState.players.map((player) => {
           if (player.training) {
             const newTicksRemaining = player.training.ticksRemaining - 1;
@@ -113,12 +138,18 @@ export function useGameLoop() {
           newState = handlePlayRound(newState);
         }
 
+        lastRunTick = newState.tick
+        }
         return newState;
       });
-    }, 1000);
 
-    return () => clearInterval(interval);
+      lastTick = timestamp;
+    }
   }, []);
+
+  useEffect(() => {
+    startGameLoop(gameLoop);
+  }, [gameLoop]);
 
   useEffect(() => {
     if (previousGameStateRef.current) {
@@ -130,5 +161,6 @@ export function useGameLoop() {
     previousGameStateRef.current = gameState;
   }, [gameState]);
 
-  return { gameState, addMessage };
+  const gameLoopInstance = { gameState, addMessage };
+  return gameLoopInstance;
 }
