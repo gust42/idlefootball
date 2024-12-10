@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Player } from "../types/game";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
+import { useSnapshot } from "valtio";
+import { gameState } from "../hooks/useGameState";
 
-interface PlayerCardsProps {
-  players: Player[];
-}
+export function PlayerCards() {
+  const snapshot = useSnapshot(gameState);
+  const { players } = snapshot;
 
-export function PlayerCards({ players }: PlayerCardsProps) {
   return (
     <Droppable droppableId="availablePlayers" direction="horizontal">
       {(provided) => (

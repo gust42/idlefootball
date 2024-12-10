@@ -1,6 +1,6 @@
 import { GameState, Match, Team } from "../types/game";
 
-export function handlePlayMatch(newState: GameState, match: Match) {
+export function handlePlayMatch(match: Match) {
   const calculatePassingAbility = (team: Team) => {
     return team.players.reduce((total, player) => {
       return total + player.skills.passing;
@@ -48,6 +48,12 @@ export function handlePlayMatch(newState: GameState, match: Match) {
 
   match.homeGoals = homeGoals;
   match.awayGoals = awayGoals;
+  
+    match.homeTeam.goalsFor += homeGoals;
+    match.homeTeam.goalsAgainst += awayGoals;
+
+    match.awayTeam.goalsFor += awayGoals;
+    match.awayTeam.goalsAgainst += homeGoals;
 
   if (homeGoals > awayGoals) {
     match.homeTeam.points += 3;
@@ -57,8 +63,4 @@ export function handlePlayMatch(newState: GameState, match: Match) {
     match.homeTeam.points += 1;
     match.awayTeam.points += 1;
   }
-
-  return {
-    ...newState,
-  };
 }

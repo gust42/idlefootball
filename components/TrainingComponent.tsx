@@ -3,13 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Player } from '../types/game';
+import { useSnapshot } from 'valtio';
+import { gameState } from '../hooks/useGameState';
 
-interface TrainingComponentProps {
-  players: Player[];
-  onStartTraining: (playerName: string, stat: keyof Player['skills']) => void;
-}
+export function TrainingComponent() {
+  const snapshot = useSnapshot(gameState);
+  const { players } = snapshot;
 
-export function TrainingComponent({ players, onStartTraining }: TrainingComponentProps) {
   return (
     <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {players.map((player) => (
@@ -41,4 +41,3 @@ export function TrainingComponent({ players, onStartTraining }: TrainingComponen
     </div>
   );
 }
-
