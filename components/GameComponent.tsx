@@ -57,6 +57,8 @@ export function GameComponent() {
     });
   };
 
+  console.log(currentRound);
+
   return (
     <div className="container mx-auto p-4">
       <Tabs defaultValue="team">
@@ -82,7 +84,7 @@ export function GameComponent() {
           <TrainingComponent players={players} onStartTraining={handleStartTraining} />
         </TabsContent>
         <TabsContent value="matches">
-          <MatchesComponent teams={leagueTable} schedule={schedule} currentRound={currentRound}/>
+          <MatchesComponent teams={teams} schedule={schedule} currentRound={currentRound}/>
         </TabsContent>
         <TabsContent value="transfer">
           <TransferComponent availablePlayers={availablePlayers} onTransferPlayer={handleTransferPlayer} money={money} />

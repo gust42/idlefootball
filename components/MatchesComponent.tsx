@@ -10,7 +10,7 @@ interface MatchesComponentProps {
 }
 
 export function MatchesComponent({ teams, schedule, currentRound }: MatchesComponentProps) {
-  const upcomingRounds = schedule.slice(currentRound, currentRound + 5);
+  const round = schedule[currentRound];
   const matchHistory = schedule.slice(0, currentRound);
 
   return (
@@ -28,16 +28,14 @@ export function MatchesComponent({ teams, schedule, currentRound }: MatchesCompo
           <CardTitle>Upcoming Matches</CardTitle>
         </CardHeader>
         <CardContent>
-          {upcomingRounds.map((round, roundIndex) => (
-            <div key={roundIndex} className="mb-4">
-              <p>Round {currentRound + roundIndex + 1}</p>
+            <div key={currentRound} className="mb-4">
+              <p>Round {currentRound + 1}</p>
               {round.matches.map((match, matchIndex) => (
                 <div key={matchIndex} className="mb-4">
                   <p>{match.homeTeam.name} vs {match.awayTeam.name}</p>
                 </div>
               ))}
             </div>
-          ))}
         </CardContent>
       </Card>
       <Card>

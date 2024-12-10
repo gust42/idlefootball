@@ -15,17 +15,19 @@ export function useGameState() {
         })
     );
 
+    var teams = [{ id: 0, name: "Current Team", players: [], points: 0, goalsFor: 0, goalsAgainst: 0 }, ...teamData];
+
     return savedState
       ? JSON.parse(savedState)
       : {
           players: [],
           availablePlayers: availablePlayers,
           currentTeam: [],
-          teams: [...teamData, { id: 0, name: "Current Team", players: [], points: 0, goalsFor: 0, goalsAgainst: 0 }],
+          teams,
           tick: 0,
           money: 100000,
           leagueTable: teamData,
-          schedule: generateSchedule(teamData),
+          schedule: generateSchedule(teams),
           currentRound: 0,
         };
   });
@@ -42,5 +44,5 @@ export function useGameState() {
     previousGameStateRef.current = gameState;
   }, [gameState]);
 
-  return { gameState, setGameState };
+    return { gameState, setGameState };
 }

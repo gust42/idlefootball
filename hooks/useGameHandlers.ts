@@ -1,4 +1,5 @@
 import { Player, GameState, Match, Team } from "../types/game";
+import { handlePlayMatch } from "./handlePlayMatch";
 
 export function handleTransferPlayer(newState: GameState, payload: Player) {
   if (payload && payload.id != null) {
@@ -91,43 +92,6 @@ export function handleSwapPlayerPositions(
       }
       return player;
     }),
-  };
-}
-
-export function handlePlayMatch(newState: GameState, match: Match) {
-  const calculateTeamStrength = (team: Team) => {
-    return team.players.reduce((total, player) => {
-      return total + player.skills.shooting + player.skills.passing + player.skills.defending + player.skills.workrate;
-    }, 0);
-  };
-
-  const homeStrength = calculateTeamStrength(match.homeTeam) * 1.1; // Home advantage
-  const awayStrength = calculateTeamStrength(match.awayTeam);
-  const totalStrength = homeStrength + awayStrength;
-
-  const homeGoals = Math.round((homeStrength / totalStrength) * 5 + Math.random() * 2);
-  const awayGoals = Math.round((awayStrength / totalStrength) * 5 + Math.random() * 2);
-
-  match.homeGoals = homeGoals;
-  match.awayGoals = awayGoals;
-
-  const updateTeamStats = (team: Team, goalsFor: number, goalsAgainst: number) => {
-    team.goalsFor += goalsFor;
-    team.goalsAgainst += goalsAgainst;
-    if (goalsFor > goalsAgainst) {
-      team.points += 3;
-    } else if (goalsFor === goalsAgainst) {
-      team.points += 1;
-    }
-  };
-
-  updateTeamStats(match.homeTeam, homeGoals, awayGoals);
-  updateTeamStats(match.awayTeam, awayGoals, homeGoals);
-
-  return {
-    ...newState,
-    leagueTable: [...newState.leagueTable],
-    schedule: newState.schedule.filter((m) => m !== match),
   };
 }
 
