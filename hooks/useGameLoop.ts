@@ -10,6 +10,7 @@ import {
   handleRemovePlayerPosition,
   handleSwapPlayerPositions,
   handlePlayRound,
+  handleChangeTeamName,
 } from "./useGameHandlers";
 import { handlePlayMatch } from "./handlePlayMatch";
 
@@ -84,6 +85,12 @@ export function useGameLoop() {
           break;
         case "PLAY_ROUND":
           newState = handlePlayRound(newState);
+          break;
+        case "CHANGE_TEAM_NAME":
+          newState = handleChangeTeamName(
+            newState,
+            message.payload as string
+          );
           break;
         default:
           break;

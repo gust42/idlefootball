@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useGameLoop } from "../hooks/useGameLoop";
 import { PlayerCards } from "./PlayerCards";
 import { SoccerField } from "./SoccerField";
@@ -13,6 +13,8 @@ import { DragDropContext, DropResult } from "@hello-pangea/dnd";
 export function GameComponent() {
   const { gameState, addMessage } = useGameLoop();
   const { currentTeam, money, players, availablePlayers, teams, schedule, leagueTable, currentRound } = gameState;
+
+  const [newTeamName, setNewTeamName] = useState("");
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) {
@@ -57,6 +59,14 @@ export function GameComponent() {
     });
   };
 
+  const handleChangeTeamName = () => {
+    addMessage({
+      type: "CHANGE_TEAM_NAME",
+      payload: newTeamName,
+    });
+    setNewTeamName("");
+  };
+
   console.log(currentRound);
 
   return (
@@ -79,6 +89,21 @@ export function GameComponent() {
               </div>
             </div>
           </DragDropContext>
+          <div className="mt-4">
+            <input
+              type="text"
+              value={newTeamName}
+              onChange={(e) => setNewTeamName(e.target.value)}
+              placeholder="Enter new team name"
+              className="border p-2 rounded"
+            />
+            <button
+              onClick={handleChangeTeamName}
+              className="ml-2 p-2 bg-blue-500 text-white rounded"
+            >
+              Change Team Name
+            </button>
+          </div>
         </TabsContent>
         <TabsContent value="training">
           <TrainingComponent players={players} onStartTraining={handleStartTraining} />
