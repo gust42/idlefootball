@@ -108,3 +108,12 @@ export function handlePlayRound(newState: GameState) {
     currentRound: newState.currentRound + 1,
   };
 }
+
+export function handleChangeTeamName(newState: GameState, payload: string) {
+  return {
+    ...newState,
+    teams: newState.teams.map((team) =>
+      team.id === 0 ? { ...team, name: payload } : team
+    ),
+  };
+}

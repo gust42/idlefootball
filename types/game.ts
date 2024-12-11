@@ -63,6 +63,7 @@ export interface GameMessage {
     | "UPDATE_PLAYER_POSITION"
     | "REMOVE_PLAYER_POSITION"
     | "SWAP_PLAYER_POSITIONS"
-    | "PLAY_ROUND";
+    | "PLAY_ROUND"
+    | "CHANGE_TEAM_NAME";
   payload: unknown;
 }
